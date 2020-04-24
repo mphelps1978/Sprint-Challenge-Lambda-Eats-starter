@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
+import toppingsList from './toppingsList'
 
 
 export default function Pizza()  {
 
   const sizes = ['small', 'medium', 'large']
   const sauce = ['Original Red', 'Garlic Ranch', 'BBQ Sauce', 'Spinach Alfredo']
-  const availableToppings = ['Peperoni', 'Sausage', 'Canadian Bacon', 'Spicy Italian Sausage', 'Grilled Chicken', 'Onions', 'Green Pepper', 'Diced Tomatos', 'Black Olives', 'Roasted Garlic', 'Artichoke Hearts', 'Three Cheese Blend', 'Pineapple', 'Extra Cheese']
+  const availableToppings = toppingsList
   const [toppings, setToppings] = useState([])
 
   const [pizza, setPizza] = useState({
@@ -19,11 +20,14 @@ export default function Pizza()  {
   })
 
   const handleToppingChange = e => {
-    setToppings(toppings.push(e.target.label))
+    e.target.checked = !e.target.checked
+    toppings.push(e.target.label)
   }
 
   const handleInputChange = e => {
     setPizza({ ...pizza, [e.target.name]: e.target.value })
+    console.log(pizza);
+
   }
 
   return (
@@ -50,13 +54,13 @@ export default function Pizza()  {
       <label>
         Topppings:
         {
-          availableToppings.map(topping => {
+          availableToppings.forEach(topping => {
             return(
-              <div className = "checkBoxes" key = {topping}>
-                {topping}
+              <div className = "checkBoxes" key = {topping.name}>
+                {topping.name}
                 <input
-                  label={topping}
-                  name = {topping}
+                  label={topping.name}
+                  name = {topping.name}
                   type = "checkbox"
                   checked = {false}
                   onChange = {handleToppingChange} />
@@ -97,7 +101,7 @@ export default function Pizza()  {
           value = {pizza.quantity}
           onChange = {handleInputChange} />
       </label>
-      
+
       <div className = "total">
         Total Price: {17.95 * pizza.quantity}
       </div>
