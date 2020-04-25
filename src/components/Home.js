@@ -1,12 +1,13 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
-import Pizza from './Pizza'
+
 
 const Home = () => {
 
   return (
-
-<h1>HOME</h1>
+<div className = "homeComponent">
+<h1>Lambda Eats!</h1>
+<p>Welcome to Lambda Eats! Serving Starving Coders since 2020</p>
+</div>
   );
 };
 export default Home;

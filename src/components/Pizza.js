@@ -1,113 +1,140 @@
-import React, { useState } from 'react'
-import toppingsList from './toppingsList'
+import React, {useState, useEffect } from 'react'
+import './Home'
+import * as Yup from 'yup'
+import axios from 'axios'
 
 
-export default function Pizza()  {
+const Pizza = () => {
 
-  const sizes = ['small', 'medium', 'large']
-  const sauce = ['Original Red', 'Garlic Ranch', 'BBQ Sauce', 'Spinach Alfredo']
-  const availableToppings = toppingsList
-  const [toppings, setToppings] = useState([])
+  // Setup a static URL for POST requests
+  const url = 'https://reqres.in/api/users'
 
-  const [pizza, setPizza] = useState({
-    quantity: "",
+
+  // Setup Initial States TODO: refactor this for redux
+  const [disableButton, setDisableButton] = useState(true)
+  const [sendOrder, setSendOrder] = useState([])
+  const [formInfo, setformInfo] = useState({
+    name: "",
+    email: "",
+    address: "",
+    phone: "",
     size: "",
-    sauce: "",
-    toppings: toppings,
-    glutenFree: "",
-    instructions: '',
-    totalPrice: ""
+    toppings: {
+      peperoni: false,
+      mushrooms: false,
+      extraCheese: false,
+    },
+    glutenFree: false,
+    specialInstructions: "",
+    price: ""
   })
 
-  const handleToppingChange = e => {
-    e.target.checked = !e.target.checked
-    toppings.push(e.target.label)
+  // this state slice will handle our error reporting when validating the form with Yup
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+  })
+
+  // Define our Form Validation Schema
+  const formSchema = Yup.object().shape({
+    name: Yup.string().required().min(3, "Please enter a valid name"),
+    email: Yup.string().email().required(),
+  })
+
+
+
+  // validate any changes made to the form against our Schema
+  const validateChanges = e => {
+    Yup
+    .reach(formSchema, e.target.name)
+    .validate(e.target.value)
+    .then(valid => {
+      setErrors({
+        ...errors,
+        [e.target.name] : ""
+      })
+    })
+    .catch(err => {
+      setErrors({
+        ...errors,
+        [e.target.name] : err.errors
+      })
+    })
   }
 
-  const handleInputChange = e => {
-    setPizza({ ...pizza, [e.target.name]: e.target.value })
-    console.log(pizza);
+  useEffect(() => {
+    formSchema.isValid(formInfo)
+      .then(valid =>{
+        setDisableButton(!valid)
+      })
+  }, [formInfo])
 
+  // Once the form is submitted, we want to post the form to our order Database, and then clear the form TODO: Create Express App to store orders (for now, we yse reqers.in)
+  const formSubmit = e => {
+    e.preventDefault()
+    axios
+      .post(url, formInfo)
+      .then(res => {
+        setSendOrder([
+          ...sendOrder,
+          res.data
+        ])
+
+        setformInfo({
+          name: "",
+          email: "",
+          address: "",
+          phone: "",
+          size: "",
+          toppings: {
+            peperoni: false,
+            mushrooms: false,
+            extraCheese: false,
+          },
+          glutenFree: false,
+          specialInstructions: "",
+          price: ""
+        })
+      })
+      .catch(err => console.log(err))
   }
+
+  // Now we need to handle the form itself - We want to populate state with the form values, as well as handle our checkboxes
+
+  const onChange = e => {
+    e.persist()
+    const newFormInfo = {  // we're going to create a temporary object with our state until it passes validation, so we aren't mutating our state object
+      ...formInfo,
+      [e.target.name]:
+        e.target.type === 'checkbox' ? e.target.checked : e.target.value
+    }
+    // Now we need to run our validations
+    validateChanges(e)
+    // and finally populate our state object
+    setformInfo(newFormInfo)
+  }
+
 
   return (
-    <div>
-
-    <h1>PIZZA</h1>
-    <form>
-      <select id = "size" name = "size">
-      {
-        sizes.map(size => {
-          return (<option key = {size} value = {size} name = {size}>{size}</option>)
-        })
-      }
-      </select>
-
-      <select id = "sauce" name = "sauce">
-        {
-          sauce.map(sauce => {
-            return(<option key = {sauce} value = {sauce} name = {sauce}>{sauce}</option>)
-          })
-        }
-      </select>
-
-      <label>
-        Topppings:
-        {
-          availableToppings.forEach(topping => {
-            return(
-              <div className = "checkBoxes" key = {topping.name}>
-                {topping.name}
-                <input
-                  label={topping.name}
-                  name = {topping.name}
-                  type = "checkbox"
-                  checked = {false}
-                  onChange = {handleToppingChange} />
-                </div>
-
-              )
-          })
-        }
-      </label>
-      <label>
-        Would you like a Gluten Free Crust?
+<div className = "pizzaForm">
+    <h2>Order a Pizza!</h2>
+    <form onSubmit = {formSubmit}>
+      <label htmlFor = "name">
+        Name:
         <input
-        type = "checkbox"
-        name = "glutenFree"
-        value = "true"
-        onChange = {handleInputChange} />
-      </label>
-
-
-      <label>
-        Special Instructions:
-        <input
+        className = "formName"
+        id = "name"
         type = "text"
-        id = "instructions"
-        name = "instructions"
-        value = {pizza.instructions}
-        onChange = {handleInputChange} />
+        name = "name"
+        value = {formInfo.name}  // We want to get the value from our state object so that it remains constant
+        onChange = {onChange} />
+        {errors.name.length > 0 ? (<p className = "error">{errors.name}</p>) : null}
       </label>
+    </form>
+</div>
+)
 
-      <label>
-        Quantity:
-        <input
-          type = "number"
-          id = "number"
-          name = "quantity"
-          min = "1"
-          max = "100"
-          value = {pizza.quantity}
-          onChange = {handleInputChange} />
-      </label>
-
-      <div className = "total">
-        Total Price: {17.95 * pizza.quantity}
-      </div>
-      </form>
-    </div>
-
-
- )
 }
+
+export default Pizza
+
